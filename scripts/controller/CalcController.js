@@ -9,6 +9,27 @@ class CalcController{
 
     }
 
+    addEventListenerAll(element, events, func){
+        events = events.split(" ")
+        events.forEach(ev=>{
+            element.addEventListener(ev, func)
+        })
+    }
+
+    initButtonsEvents(){
+        let buttons = document.querySelectorAll("#buttons > g, #parts > g")
+        buttons.forEach(button => {
+            this.addEventListenerAll(button, "click drag", () =>{
+                console.log(button.className.baseVal.replace("btn-", ""))
+            })
+
+            this.addEventListenerAll(button, "mouseover mouseup mousedown", ()=>{
+                button.style.cursor = "pointer"
+            })
+        })
+    }
+
+
     initialize(){
         this.displayCalc = "0"
         this.setDisplayDateTime()
@@ -54,7 +75,7 @@ class CalcController{
     set currentDate(valor){
         this._currentDate = valor
     }
-    
+
     get currentDate() {
         return new Date()
     }
