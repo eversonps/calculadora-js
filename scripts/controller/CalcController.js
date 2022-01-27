@@ -19,7 +19,11 @@ class CalcController{
     }
 
     setDisplayDateTime(){
-        this.displayDate = this.currentDate.toLocaleDateString(this._locale)
+        this.displayDate = this.currentDate.toLocaleDateString(this._locale, {
+            day: "2-digit",
+            month: "long",
+            year: "numeric"
+        })
         this.displayTime = this.currentDate.toLocaleTimeString(this._locale)
     }
 
@@ -47,11 +51,11 @@ class CalcController{
         return this._timeEl.innerHTML     
     }
 
-    get currentDate() {
-        return new Date()
-    }
-
     set currentDate(valor){
         this._currentDate = valor
+    }
+    
+    get currentDate() {
+        return new Date()
     }
 }
