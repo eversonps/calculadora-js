@@ -35,13 +35,23 @@ class CalcController{
             }
         }
 
+        if(!lastNumber){
+            lastNumber = 0
+        }
+
         this.displayCalc = lastNumber
+
     }
 
     calc(){
         let last = this._operation.pop()
         let result  = eval(this._operation.join(""))
-        this._operation = [result, last]
+        if(last == "%"){
+            result /= 100
+            this._operation = [result]
+        }else{
+            this._operation = [result, last]
+        }
     }
 
     pushOperation(value){
@@ -78,10 +88,13 @@ class CalcController{
 
     clearAll(){
         this._operation = []
+        this.setLastNumberToDisplay()
+
     }
 
     clearEntry(){
         this._operation.pop()
+        this.setLastNumberToDisplay()
     }
 
     btnExec(value){
@@ -154,7 +167,6 @@ class CalcController{
 
     initialize(){
         this._operation = []
-        this.displayCalc = "0"
         this.setDisplayDateTime()
         setInterval(()=>{
             this.setDisplayDateTime()
