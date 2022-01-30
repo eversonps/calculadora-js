@@ -1,111 +1,87 @@
 class CalcController{
     constructor(){
-        this._operation
+        this._lastOperator = ""
+        this._lastNumber = ""
+        this._operation = []
         this._locale = "pt-br"
         this._currentDate
         this._displayCalcEl = document.querySelector("#display")
         this._dateEl = document.querySelector("#data")
         this._timeEl = document.querySelector("#hora")
         this.initialize
-
     }
 
-    setError(){
-        this.displayCalc = "Error"
+    set displayCalc(calc){
+        this._displayCalcEl.innerHTML = calc
     }
 
-    isOperator(value){
-        return(["+", "-", "*", "/", "%"].indexOf(value) > -1)
+    get displayCalc() {
+        return this._displayCalcEl.innerHTML
     }
 
-    getLastOperation(){
-        return this._operation[this._operation.length - 1]
+    set displayDate(date){
+        this._dateEl.innerHTML = date
     }
 
-    setLastOperation(value){
-        this._operation[this._operation.length - 1] = value
+    get displayDate(){
+        return this._dateEl.innerHTML
     }
 
-    setLastNumberToDisplay(){
-        var lastNumber
-        for(var i = this._operation.length-1; i >= 0; i--){
-            if(!this.isOperator(this._operation[i])){
-                lastNumber = this._operation[i]
-                break
-            }
-        }
-
-        if(!lastNumber){
-            lastNumber = 0
-        }
-
-        this.displayCalc = lastNumber
-
+    set displayTime(time){
+        this._timeEl.innerHTML = time
     }
 
-    calc(){
-        let last = ""
-
-        if(this._operation.length > 3){
-            last = this._operation.pop()    
-        }
-
-        let result  = eval(this._operation.join(""))
-        if(last == "%"){
-            result /= 100
-            this._operation = [result]
-        }else{
-            this._operation = [result]
-            if(last){
-                this._operation.push(last)
-            }
-        }
+    get displayTime(){
+        return this._timeEl.innerHTML     
     }
 
-    pushOperation(value){
-        this._operation.push(value)
-
-        if(this._operation.length > 3){
-            console.log(this._operation)
-            this.calc()
-            this.setLastNumberToDisplay()
-        }
-    }
-    
-    addOperation(value){
-        if(isNaN(this.getLastOperation())){
-            // string
-            if(this.isOperator(value)){
-                this.setLastOperation(value)
-            }else if(isNaN(value)){
-                console.log(value)
-            }else{
-                this.pushOperation(value)
-                this.setLastNumberToDisplay()
-            }
-        }else{
-            if(this.isOperator(value)){
-                this.pushOperation(value)
-            }else{
-                let valueConc = this.getLastOperation().toString() + value.toString()
-                this.setLastOperation(parseInt(valueConc))
-                this.setLastNumberToDisplay()
-            }
-        }
+    set currentDate(valor){
+        this._currentDate = valor
     }
 
-    clearAll(){
-        this._operation = []
-        this.setLastNumberToDisplay()
-
+    get currentDate() {
+        return new Date()
     }
 
-    clearEntry(){
-        this._operation.pop()
-        this.setLastNumberToDisplay()
+    initialize(){
+        this.setDisplayDateTime()
+        setInterval(()=>{
+            this.setDisplayDateTime()
+        }, 1000)
+        this.initButtonsEvents()
+    }
+
+    setDisplayDateTime(){
+        this.displayDate = this.currentDate.toLocaleDateString(this._locale, {
+            day: "2-digit",
+            month: "long",
+            year: "numeric"
+        })
+        this.displayTime = this.currentDate.toLocaleTimeString(this._locale)
+    }
+
+    initButtonsEvents(){
+        let buttons = document.querySelectorAll("#buttons > g, #parts > g")
+        buttons.forEach(button => {
+            this.addEventListenerAll(button, "click drag", () =>{
+                this.btnExec(button.className.baseVal.replace("btn-", ""))
+            })
+
+            this.addEventListenerAll(button, "mouseover mouseup mousedown", ()=>{
+                button.style.cursor = "pointer"
+            })
+        })
+    }
+
+    addEventListenerAll(element, events, func){
+        events = events.split(" ")
+        events.forEach(ev=>{
+            element.addEventListener(ev, func)
+        })
     }
 
     btnExec(value){
+
         switch(value){
             case "ac":
                 this.clearAll()
@@ -152,74 +128,126 @@ class CalcController{
         }
     }
 
-    addEventListenerAll(element, events, func){
-        events = events.split(" ")
-        events.forEach(ev=>{
-            element.addEventListener(ev, func)
-        })
+    addOperation(value){
+        if(isNaN(this.getLastOperation())){
+            // caso o ultimo operador não seja um número
+            if(this.isOperator(value)){
+                // caso o valor atual seja um operador
+                this.setLastOperation(value)
+            }else if(isNaN(value)){
+                // caso o valor atual seja indefinido
+                console.log(value)
+            }else{
+                // caso o valor atual seja um número
+                this.pushOperation(value)
+                this.setLastNumberToDisplay()
+            }
+        }else{
+            // caso o ultimo operador seja um número
+            if(this.isOperator(value)){
+                // caso o valor atual seja um operador
+                this.pushOperation(value)
+            }else{
+                // caso o valor atual seja um número
+                let valueConc = this.getLastOperation().toString() + value.toString()
+                this.setLastOperation(parseInt(valueConc))
+                this.setLastNumberToDisplay()
+            }
+        }
+    } 
+
+    getLastOperation(){
+        return this._operation[this._operation.length - 1]
     }
 
-    initButtonsEvents(){
-        let buttons = document.querySelectorAll("#buttons > g, #parts > g")
-        buttons.forEach(button => {
-            this.addEventListenerAll(button, "click drag", () =>{
-                this.btnExec(button.className.baseVal.replace("btn-", ""))
-            })
-
-            this.addEventListenerAll(button, "mouseover mouseup mousedown", ()=>{
-                button.style.cursor = "pointer"
-            })
-        })
+    setLastOperation(value){
+        this._operation[this._operation.length - 1] = value
     }
 
+    isOperator(value){
+        return(["+", "-", "*", "/", "%"].indexOf(value) > -1)
+    }
 
-    initialize(){
+    pushOperation(value){
+        this._operation.push(value)
+
+        if(this._operation.length > 3){
+            this.calc()
+        }
+    }
+
+    calc(){
+        let last = ""
+        this._lastOperator = this.getLastItem()
+
+        if(this._operation.length < 3){
+            let firstNumber = this._operation[0]
+            this._operation = [firstNumber, this._lastOperator, this._lastNumber]
+        }
+
+        if(this._operation.length == 3){ 
+            this._lastNumber = this.getLastItem(false)
+        } else if(this._operation.length > 3){
+            last = this._operation.pop()  
+            this._lastNumber = this.getResult() 
+        }
+
+        let result  = this.getResult()
+        if(last == "%"){
+            result /= 100
+            this._operation = [result]
+        }else{
+            this._operation = [result]
+            if(last){
+                this._operation.push(last)
+            }
+        }
+
+        this.setLastNumberToDisplay()
+    }
+
+    getResult(){
+        console.log(this._operation)
+        return eval(this._operation.join(""))
+    }
+
+    getLastItem(isOperator = true){
+        let lastItem
+        for(let i = this._operation.length - 1; i>=0; i--){
+            if(this.isOperator(this._operation[i]) == isOperator){
+                lastItem = this._operation[i]
+                break
+            }
+        }
+
+        if(!lastItem){
+           lastItem = (isOperator) ?  this._lastOperator : this._lastNumber
+        } 
+
+        return lastItem
+    }
+
+    setLastNumberToDisplay(){
+        let lastNumber = this.getLastItem(false)
+
+        if(!lastNumber){
+            lastNumber = 0
+        }
+        this.displayCalc = lastNumber
+    }
+
+    clearAll(){
         this._operation = []
-        this.setDisplayDateTime()
-        setInterval(()=>{
-            this.setDisplayDateTime()
-        }, 1000)
+        this.setLastNumberToDisplay()
 
     }
 
-    setDisplayDateTime(){
-        this.displayDate = this.currentDate.toLocaleDateString(this._locale, {
-            day: "2-digit",
-            month: "long",
-            year: "numeric"
-        })
-        this.displayTime = this.currentDate.toLocaleTimeString(this._locale)
+    clearEntry(){
+        this._operation.pop()
+        this.setLastNumberToDisplay()
     }
 
-    set displayCalc(calc){
-        this._displayCalcEl.innerHTML = calc
-    }
-
-    get displayCalc() {
-        return this._displayCalcEl.innerHTML
-    }
-
-    set displayDate(date){
-        this._dateEl.innerHTML = date
-    }
-
-    get displayDate(){
-        return this._dateEl.innerHTML
-    }
-
-    set displayTime(time){
-        this._timeEl.innerHTML = time
-    }
-
-    get displayTime(){
-        return this._timeEl.innerHTML     
-    }
-
-    set currentDate(valor){
-        this._currentDate = valor
-    }
-
-    get currentDate() {
-        return new Date()
+    setError(){
+        this.displayCalc = "Error"
     }
 }
