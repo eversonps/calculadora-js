@@ -81,8 +81,8 @@ class CalcController{
 
     playAudio(){
         if(this._audioOnOff){
-            this.audio.currentTime = 0
-            this.audio.play()
+            this._audio.currentTime = 0
+            this._audio.play()
         }
     }
 
