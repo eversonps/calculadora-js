@@ -1,5 +1,7 @@
 class CalcController{
     constructor(){
+        this._audio = new Audio("click.mp3")
+        this._audioOnOff = false
         this._lastOperator = ""
         this._lastNumber = ""
         this._operation = []
@@ -8,11 +10,19 @@ class CalcController{
         this._displayCalcEl = document.querySelector("#display")
         this._dateEl = document.querySelector("#data")
         this._timeEl = document.querySelector("#hora")
-        this.initialize
+        this.initialize()
+        this.initKeyBoard()
+        this.initButtonsEvents()
+        
     }
 
     set displayCalc(calc){
+
         this._displayCalcEl.innerHTML = calc
+
+        if(calc.toString().length > 10){
+            this.setError()
+        }
     }
 
     get displayCalc() {
@@ -43,12 +53,37 @@ class CalcController{
         return new Date()
     }
 
+    copyToClipboard(){
+        let input = document.createElement("input")
+        input.value = this.displayCalc
+        document.body.appendChild(input)
+        input.select()
+        document.execCommand("Copy")
+    }
+
     initialize(){
         this.setDisplayDateTime()
         setInterval(()=>{
             this.setDisplayDateTime()
         }, 1000)
-        this.initButtonsEvents()
+        this.pasteFromClipboard()
+
+        document.querySelectorAll(".btn-ac").forEach(btn=>
+            btn.addEventListener("dblclick", e=>{
+                this.toogleAudio()
+            })
+        )
+    }
+
+    toogleAudio(){
+        this._audioOnOff = !this._audioOnOff
+    }
+
+    playAudio(){
+        if(this._audioOnOff){
+            this.audio.currentTime = 0
+            this.audio.play()
+        }
     }
 
     setDisplayDateTime(){
@@ -73,6 +108,59 @@ class CalcController{
         })
     }
 
+    initKeyBoard(){
+        document.addEventListener("keyup", e=>{
+            this.playAudio()
+            switch(e.key){
+                case "Escape":
+                    this.clearAll()
+                    break;
+                case "Backspace":
+                    this.clearEntry()
+                    break;
+                case "+":
+                case "-":
+                case "*":
+                case "/":
+                case "%":
+                    this.addOperation(e.key)
+                    break;
+                case "=":
+                case "Enter":
+                    this.calc()
+                    break;
+                case ".":
+                case ",":
+                    this.addDot()
+                    break;
+                case "0":
+                case "1":
+                case "2":
+                case "3":
+                case "4":
+                case "5":
+                case "6":
+                case "7":
+                case "8":
+                case "9":
+                    this.addOperation(parseFloat(e.key))
+                    break;
+                case "c":
+                    if(e.ctrlKey){
+                        this.copyToClipboard() 
+                        break;
+                    }       
+            }
+        })
+    }
+
+    pasteFromClipboard(){
+        document.addEventListener("paste", e=>{
+            let text = e.clipboardData.getData("Text")
+            this.displayCalc = parseFloat(text)
+        })
+    }
+    
     addEventListenerAll(element, events, func){
         events = events.split(" ")
         events.forEach(ev=>{
@@ -81,7 +169,7 @@ class CalcController{
     }
 
     btnExec(value){
-
+        this.playAudio()
         switch(value){
             case "ac":
                 this.clearAll()
@@ -168,14 +256,12 @@ class CalcController{
 
     pushOperation(value){
         this._operation.push(value)
-
         if(this._operation.length > 3){
             this.calc()
         }
     }
 
     calc(){
-        console.log(this._operation)
         let last = ""
         this._lastOperator = this.getLastItem()
 
@@ -207,12 +293,20 @@ class CalcController{
     }
 
     getResult(){
-        return eval(this._operation.join(""))
+        try{
+            return eval(this._operation.join(""))
+        } catch(e){
+            setTimeout(()=>{
+                this.setError(e)
+            }, 1)
+        }
+        
     }
 
     getLastItem(isOperator = true){
         let lastItem
-        for(let i = this._operation.length - 1; i>=0; i--){
+
+        for(let i = this._operation.length - 1; i >= 0; i--){
             if(this.isOperator(this._operation[i]) == isOperator){
                 lastItem = this._operation[i]
                 break
@@ -239,7 +333,6 @@ class CalcController{
         this._lastNumber = ""
         this._lastOperator = ""
         this.setLastNumberToDisplay()
-
     }
 
     clearEntry(){
